@@ -23,12 +23,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   DB.connect::<Ws>("0.0.0.0:8000").await?;
 
   // authenticate with surrealdb
-  let auth = DB
-    .signin(Root {
-      username: "root",
-      password: "root",
-    })
-    .await?;
+  DB.signin(Root {
+    username: "root",
+    password: "root",
+  })
+  .await?;
 
   // // proper authentication
   //   let token = DB
@@ -47,18 +46,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   // create the namespace and database
   DB.use_ns("test_namespace").use_db("test_database").await?;
 
+  // setting database entries
+  let first_person = Person {
+    fname: "noice".to_string(),
+    lname: "noie".to_string(),
+  };
+  let second_person = Person {
+    fname: "nice".to_string(),
+    lname: "nie".to_string(),
+  };
+
   // setting variables to be used in the db
-  DB.set(
-    "name",
-    Person {
-      fname: "noice".to_string(),
-      lname: "noie".to_string(),
-    },
-  )
-  .await?;
+  DB.set("first", first_person).await?;
+  DB.set("second", second_person).await?;
 
   // query the variables to the database
-  DB.query("CREATE people SET first_person = $name").await?;
+  DB.query("CREATE people SET first_guy = $first, second_guy = $second")
+    .await?;
+  // .query("SET second_person = $second")
 
   // reponse from the database
   let ress: Response = DB.query("SELECT * FROM people").await?;
