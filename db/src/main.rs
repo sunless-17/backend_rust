@@ -1,15 +1,15 @@
 use axum::{Router, routing::get};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::sync::LazyLock;
 use surrealdb::{
-  Response, Surreal,
+  Surreal,
   engine::remote::ws::{Client, Ws},
   opt::auth::Root,
 };
 
 static DB: LazyLock<Surreal<Client>> = LazyLock::new(Surreal::init);
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct Person {
   fname: String,
   lname: String,
@@ -19,6 +19,7 @@ struct Person {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
   // surreal db
   // TODO: use dot envy for logins and ports
+  // TODO: using tracing to log
   // connect to local db with <Ws> (remote <Wss>)
   DB.connect::<Ws>("0.0.0.0:8000").await?;
 
@@ -29,69 +30,54 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   })
   .await?;
 
-  // // proper authentication
-  //   let token = DB
-  //     .signin(Scope {
-  //       namespace: "test_namespace",
-  //       database: "test_database",
-  //       access: "user",
-  //       params: Credentials {
-  //         username: "root",
-  //         pass: "root",
-  //       },
-  //     })
-  //     .await?;
-  //   DB.authenticate(token).await?;
-
   // create the namespace and database
   DB.use_ns("test_namespace").use_db("test_database").await?;
 
-  // setting database entries
-  let first_person = Person {
-    fname: "noice".to_string(),
-    lname: "noie".to_string(),
-  };
-  let second_person = Person {
-    fname: "nice".to_string(),
-    lname: "nie".to_string(),
-  };
-
-  // setting variables to be used in the db
-  DB.set("first", first_person).await?;
-  DB.set("second", second_person).await?;
-
-  // query the variables to the database
-  DB.query("CREATE people SET first_guy = $first, second_guy = $second")
+  // posting records from the database
+  // FIX: add type annotations without assigning a variable
+  let record: Option<Person> = DB
+    .create(("table_name", 0))
+    .content(Person {
+      fname: "foo".to_string(),
+      lname: "bar".to_string(),
+    })
     .await?;
-  // .query("SET second_person = $second")
 
-  // reponse from the database
-  let ress: Response = DB.query("SELECT * FROM people").await?;
+  // reading records from the database
+  // vec for entire record response
+  let res: Vec<Person> = DB.select("table_name").await?;
+  dbg!(res);
+  // opt for specific record
+  let ress: Option<Person> = DB.select(("table_name", 0)).await?;
   dbg!(ress);
 
-  // // Create a new person with a random id
-  // let created: Option<Person> = DB
-  //   .create("people")
-  //   .content(Person {
-  //     name: "noice".to_string(),
-  //     age: 13,
-  //   })
-  //   .await?;
-  // dbg!(created);
+  // updating records from the database
+  let record: Option<Person> = DB
+    .update(("table_name", 0))
+    .content(Person {
+      fname: "foo bar".to_string(),
+      lname: "bar foo".to_string(),
+    })
+    .await?;
 
-  // // // Update a person record with a specific id
-  // // let updated: Option<Record> = db
-  // //   .update(("person", "jaime"))
-  // //   .merge(Responsibility { marketing: true })
-  // //   .await?;
-  // // dbg!(updated);
+  // reading records from the database
+  // vec for entire record response
+  let res: Vec<Person> = DB.select("table_name").await?;
+  dbg!(res);
+  // opt for specific record
+  let ress: Option<Person> = DB.select(("table_name", 0)).await?;
+  dbg!(ress);
 
-  // // Select all people records
-  // let people: Vec<Person> = DB.select("people").await?;
-  // dbg!(people);
+  // delete records and entire tables on the database
+  // // vec for entire record response
+  let del: Vec<Person> = DB.delete("table_name").await?;
+  dbg!(del);
+  // opt for specific record
+  let dell: Option<Person> = DB.delete(("table_name", "0")).await?;
+  dbg!(dell);
 
   // testing
-  println!("db operational");
+  println!("db connected");
 
   // axum server
   let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await?;
