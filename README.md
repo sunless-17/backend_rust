@@ -1,24 +1,5 @@
 # learning backend rust
-- surrealdb embedded
-
-# easy
-## calculator + flags for unit conversion
-## echo
-## ls
-## find (async)
-## grep (async)
-## stats
-
-# medium
-## fortune
-## todo
-## quiz
-## local ai
-## budgeting
-
-# hard
-## weather
-## scraper
-## file manager
-## social media bot
-## bank (crud)
+- complete surrealdb
+- integrate with axum and cli apps
+- tracing for better logs and dotenvy for logins
+- change file structure for todo app
