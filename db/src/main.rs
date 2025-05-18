@@ -26,23 +26,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   // create the namespace and database
   db.use_ns("test_namespace").use_db("test_database").await?;
 
-  // // posting records from the database
-  // // FIX: add type annotations without assigning a variable
-  // let record: Option<Person> = db
-  //   .create(("table_name", 0))
-  //   .content(Person {
-  //     fname: "foo".to_string(),
-  //     lname: "bar".to_string(),
-  //   })
-  //   .await?;
+  // posting records from the database
+  // FIX: add type annotations without assigning a variable
+  let rec: Option<Person> = db
+    .create(("table_name", 1))
+    .content(Person {
+      fname: "foo bar".to_string(),
+      lname: "bar foo".to_string(),
+    })
+    .await?;
 
-  // reading records from the database
-  // vec for entire record response
-  let res: Vec<Person> = db.select("table_name").await?;
+  // import external db file
+  db.import("db.suql").await?;
+  let res: Vec<Person> = db.query(select_all);
   dbg!(&res);
-  // opt for specific record
-  let ress: Option<Person> = db.select(("table_name", 0)).await?;
-  dbg!(&ress);
+  // // reading records from the database
+  // // vec for entire record response
+  // let res: Vec<Person> = db.select("table_name").await?;
+  // dbg!(&res);
+  // // opt for specific record
+  // let ress: Option<Person> = db.select(("table_name", 1)).await?;
+  // dbg!(&ress);
 
   // // updating records from the database
   // let record: Option<Person> = DB
